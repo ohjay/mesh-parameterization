@@ -3,6 +3,11 @@
 #include <igl/edge_topology.h>
 #include <igl/is_boundary_edge.h>
 #include <igl/vertex_triangle_adjacency.h>
+#include <igl/triangle_triangle_adjacency.h>
+#include <igl/is_border_vertex.h>
+#include <igl/harmonic.h>
+#include <igl/cut_mesh.h>
+#include <igl/boundary_loop.h>
 
 // Given a 3D mesh of arbitrary genus,
 // find a cut that opens the mesh into a topological disk.
@@ -166,14 +171,111 @@ void initial_cut(const Eigen::MatrixXd & V,
     cut_edges = remaining_edges + boundary_edges;  // re-add boundary edges
 }
 
+void open_cut(const Eigen::MatrixXd & V,
+              const Eigen::MatrixXi & F,
+              const Eigen::ArrayXi & cut_edges,
+              Eigen::MatrixXd & Vcut,
+              Eigen::MatrixXi & Fcut,
+              Eigen::VectorXi & boundary)
+{
+    // Edges
+    Eigen::MatrixXi E;
+    Eigen::MatrixXi FE;
+    Eigen::MatrixXi EF;
+    igl::edge_topology(V, F, E, FE, EF);
+
+    // Vertex-face topology
+    std::vector<std::vector<int>> VF;
+    std::vector<std::vector<int>> VFi;
+    igl::vertex_triangle_adjacency(V, F, VF, VFi);
+
+    // Face-face topology
+    Eigen::MatrixXi TT;
+    Eigen::MatrixXi TTi;
+    igl::triangle_triangle_adjacency(F, TT, TTi);
+
+    // Border vertex identification
+    std::vector<bool> V_border = igl::is_border_vertex(V, F);
+
+    // Define edges to cut
+    Eigen::MatrixXi cuts = Eigen::MatrixXi::Zero(F.rows(), 3);
+    for (int edge = 0; edge < cut_edges.size(); edge++)
+    {
+        if (cut_edges[edge])
+        {
+            for (int fi = 0; fi < 2; fi++)
+            {
+                int face = EF(edge, fi);
+                if (face != -1)
+                {
+                    int ei = 0;
+                    while (FE(face, ei) != edge) ei++;
+                    cuts(face, ei) = 1;
+                }
+            }
+        }
+    }
+
+    // Open mesh
+    igl::cut_mesh(V, F, VF, VFi, TT, TTi, V_border, cuts, Vcut, Fcut);
+
+    // Get boundary indices into Vcut
+    igl::boundary_loop(Fcut, boundary);
+}
+
+// Map opened cut nodes to grid points on the boundary of the unit square.
+void boundary_parameterization(const Eigen::MatrixXd & V,
+                               const Eigen::MatrixXi & F,
+                               const Eigen::VectorXi & boundary,
+                               Eigen::MatrixXd & boundary_uv)
+{
+    // Output N x 2 list of 2D positions on the unit square boundary
+    int n = boundary.size();
+    boundary_uv = Eigen::MatrixXd::Zero(n, 2);
+    double increment = 4.0 / static_cast<double>(n);
+    double i = 0;
+    for (int vi = 0; vi < n; vi++)
+    {
+        switch(int(i / 4.0))
+        {
+            case 0:
+                boundary_uv(vi, 0) = -0.5 + i;
+                boundary_uv(vi, 1) = -0.5;
+                break;
+            case 1:
+                boundary_uv(vi, 0) = 0.5;
+                boundary_uv(vi, 1) = -0.5 + (i - 1.0);
+                break;
+            case 2:
+                boundary_uv(vi, 0) = 0.5 - (i - 2.0);
+                boundary_uv(vi, 1) = 0.5;
+                break;
+            case 3:
+                boundary_uv(vi, 0) = -0.5;
+                boundary_uv(vi, 1) = 0.5 - (i - 3.0);
+                break;
+        }
+        i += increment;
+    }
+}
+
 void geometry_image(const Eigen::MatrixXd & V,
                     const Eigen::MatrixXi & F,
-                    Eigen::MatrixXd & U)
+                    Eigen::MatrixXd & U,
+                    Eigen::MatrixXd & Vcut,
+                    Eigen::MatrixXi & Fcut)
 {
     Eigen::ArrayXi cut_edges;
     initial_cut(V, F, 0.59f, cut_edges);
     printf("Number of edges in initial cut: %d\n", cut_edges.sum());
 
-    // Replace with your code
-    U = V.leftCols(2);
+    Eigen::VectorXi boundary;
+    open_cut(V, F, cut_edges, Vcut, Fcut, boundary);
+    printf("Finished opening cut.\n");
+
+    Eigen::MatrixXd boundary_uv;
+    boundary_parameterization(Vcut, Fcut, boundary, boundary_uv);
+    printf("Finished parameterizing boundary.\n");
+
+    igl::harmonic(Vcut, Fcut, boundary, boundary_uv, 1, U);
 }

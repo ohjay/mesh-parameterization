@@ -20,6 +20,8 @@
 //
 void geometry_image(const Eigen::MatrixXd & V,
                     const Eigen::MatrixXi & F,
-                    Eigen::MatrixXd & U);
+                    Eigen::MatrixXd & U,
+                    Eigen::MatrixXd & Vcut,
+                    Eigen::MatrixXi & Fcut);
 
 #endif

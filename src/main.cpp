@@ -10,7 +10,7 @@
 int main(int argc, char *argv[])
 {
     // Load input mesh
-    Eigen::MatrixXd V, U, U_lscm;
+    Eigen::MatrixXd V, U, UV_geom;
     Eigen::MatrixXi F;
     const char* mesh_filepath = (argc > 1) ? argv[1] : "../data/beetle.obj";
     igl::read_triangle_mesh(mesh_filepath, V, F);
@@ -23,7 +23,11 @@ int main(int argc, char *argv[])
 )";
 
     // Compute parameterization
-    geometry_image(V, F, U_lscm);
+    Eigen::MatrixXd Vcut;
+    Eigen::MatrixXi Fcut;
+    geometry_image(V, F, UV_geom, Vcut, Fcut);
+    V = Vcut;
+    F = Fcut;
 
     // Fit parameterization in unit sphere
     const auto normalize = [](Eigen::MatrixXd &U)
@@ -32,7 +36,7 @@ int main(int argc, char *argv[])
         U.array() /= (U.colwise().maxCoeff() - U.colwise().minCoeff()).maxCoeff() / 2.0;
     };
     normalize(V);
-    normalize(U_lscm);
+    normalize(UV_geom);
 
     bool plot_parameterization = false;
     const auto & update = [&]()
@@ -57,7 +61,7 @@ int main(int argc, char *argv[])
                 plot_parameterization ^= 1;
                 break;
             case 'l':
-                U = U_lscm;
+                U = UV_geom;
                 break;
             case 'C':
             case 'c':
@@ -72,7 +76,7 @@ int main(int argc, char *argv[])
 
     // Write parameterization
 
-    U = U_lscm;
+    U = UV_geom;
     viewer.data().set_mesh(V, F);
     Eigen::MatrixXd N;
     igl::per_vertex_normals(V, F, N);
