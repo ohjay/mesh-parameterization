@@ -1,6 +1,6 @@
 # Mesh Parameterization
 
-Code structure is based on [a project skeleton](https://github.com/alecjacobson/geometry-processing-parameterization)
+The code structure is based on [a project skeleton](https://github.com/alecjacobson/geometry-processing-parameterization)
 from Alec Jacobson's geometry processing course.
 
 ## Prerequisites
@@ -19,5 +19,5 @@ make
 
 ## Execution
 ```
-./mesh-parameterization.exe
+./mesh-parameterization <path to obj>
 ```

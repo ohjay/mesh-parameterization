@@ -18,9 +18,8 @@
 // Outputs:
 //   U  #U by 2 list of mesh UV parameterization coordinates
 //
-void geometry_image(
-    const Eigen::MatrixXd & V,
-    const Eigen::MatrixXi & F,
-    Eigen::MatrixXd & U);
+void geometry_image(const Eigen::MatrixXd & V,
+                    const Eigen::MatrixXi & F,
+                    Eigen::MatrixXd & U);
 
 #endif

@@ -71,8 +71,6 @@ int main(int argc, char *argv[])
     };
 
     // Write parameterization
-    printf("size, rows, cols: %d, %d, %d ---\n", U_lscm.size(), U_lscm.rows(), U_lscm.cols());
-    io::write_pfm("out_vertices.pfm", );
 
     U = U_lscm;
     viewer.data().set_mesh(V, F);
