@@ -8,6 +8,7 @@
 #include <igl/harmonic.h>
 #include <igl/cut_mesh.h>
 #include <igl/boundary_loop.h>
+#include <cmath>
 
 // Given a 3D mesh of arbitrary genus,
 // find a cut that opens the mesh into a topological disk.
@@ -232,27 +233,31 @@ void boundary_parameterization(const Eigen::MatrixXd & V,
     // Output N x 2 list of 2D positions on the unit square boundary
     int n = boundary.size();
     boundary_uv = Eigen::MatrixXd::Zero(n, 2);
-    double increment = 4.0 / static_cast<double>(n);
+    double increment = 5.0 / static_cast<double>(n);
     double i = 0;
     for (int vi = 0; vi < n; vi++)
     {
-        switch(int(i / 4.0))
+        switch(int(std::floor(i)))
         {
             case 0:
-                boundary_uv(vi, 0) = -0.5 + i;
-                boundary_uv(vi, 1) = -0.5;
+                boundary_uv(vi, 0) = 1.0;
+                boundary_uv(vi, 1) = i;
                 break;
             case 1:
-                boundary_uv(vi, 0) = 0.5;
-                boundary_uv(vi, 1) = -0.5 + (i - 1.0);
+                boundary_uv(vi, 0) = 1.0 - (i - 1.0) * 2.0;
+                boundary_uv(vi, 1) = 1.0;
                 break;
             case 2:
-                boundary_uv(vi, 0) = 0.5 - (i - 2.0);
-                boundary_uv(vi, 1) = 0.5;
+                boundary_uv(vi, 0) = -1.0;
+                boundary_uv(vi, 1) = 1.0 - (i - 2.0) * 2.0;
                 break;
             case 3:
-                boundary_uv(vi, 0) = -0.5;
-                boundary_uv(vi, 1) = 0.5 - (i - 3.0);
+                boundary_uv(vi, 0) = -1.0 + (i - 3.0) * 2.0;
+                boundary_uv(vi, 1) = -1.0;
+                break;
+            case 4:
+                boundary_uv(vi, 0) = 1.0;
+                boundary_uv(vi, 1) = -1.0 + (i - 4.0);
                 break;
         }
         i += increment;
