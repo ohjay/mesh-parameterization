@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 
-namespace io
+namespace io_utils
 {
     void write_png(const char* filename,
                    unsigned char* image_data,
