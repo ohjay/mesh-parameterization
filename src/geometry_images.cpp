@@ -98,7 +98,8 @@ void initial_cut(const Eigen::MatrixXd & V,
                 for (int ei = 0; ei < 3; ei++)
                 {
                     int edge = FE(face, ei);
-                    if (edge != adjacent_edge && remaining_edges[edge])
+                    if (edge != adjacent_edge &&
+                        (remaining_edges[edge] || boundary_edges[edge]))
                     {
                         if (E(edge, 0) == vertex)
                         {
@@ -121,8 +122,6 @@ void initial_cut(const Eigen::MatrixXd & V,
                 remaining_edges[adjacent_edge] = 0;
                 suspect_vertices.push_back(other_vertex);
             }
-            else if (num_adjacent_edges == 0)
-                remaining_vertices[vertex] = 0;  // delete orphan vertices
         }
     }
 
@@ -164,7 +163,7 @@ void initial_cut(const Eigen::MatrixXd & V,
     // Straighten cut-paths
     // Replace each with constrained shortest path between cut-nodes
 
-    cut_edges = remaining_edges;
+    cut_edges = remaining_edges + boundary_edges;  // re-add boundary edges
 }
 
 void geometry_image(const Eigen::MatrixXd & V,
@@ -172,7 +171,7 @@ void geometry_image(const Eigen::MatrixXd & V,
                     Eigen::MatrixXd & U)
 {
     Eigen::ArrayXi cut_edges;
-    initial_cut(V, F, 0.5f, cut_edges);
+    initial_cut(V, F, 0.59f, cut_edges);
     printf("Number of edges in initial cut: %d\n", cut_edges.sum());
 
     // Replace with your code
