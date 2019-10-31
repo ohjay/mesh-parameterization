@@ -8,7 +8,22 @@
 #include <igl/harmonic.h>
 #include <igl/cut_mesh.h>
 #include <igl/boundary_loop.h>
+#include <igl/vertex_components.h>
 #include <cmath>
+#include <unordered_set>
+
+int check_components(const Eigen::MatrixXd & V,
+                     const Eigen::MatrixXi & F)
+{
+    Eigen::VectorXi components;  // per-vertex component IDs
+    igl::vertex_components(F, components);
+
+    std::unordered_set<int> unique_component_ids;
+    for (int ci = 0; ci < components.size(); ci++)
+        unique_component_ids.insert(components[ci]);
+
+    return unique_component_ids.size();
+}
 
 // Given a 3D mesh of arbitrary genus,
 // find a cut that opens the mesh into a topological disk.
@@ -22,6 +37,7 @@ void initial_cut(const Eigen::MatrixXd & V,
     Eigen::MatrixXi FE;
     Eigen::MatrixXi EF;
     igl::edge_topology(V, F, E, FE, EF);
+    printf("V: %d | F: %d | E: %d\n", V.rows(), F.rows(), E.rows());
 
     // Vertex-face topology
     std::vector<std::vector<int>> VF;
@@ -270,6 +286,11 @@ void geometry_image(const Eigen::MatrixXd & V,
                     Eigen::MatrixXd & Vcut,
                     Eigen::MatrixXi & Fcut)
 {
+    int num_components = check_components(V, F);
+    printf("This mesh has %d connected component(s)\n", num_components);
+    if (num_components > 1)
+        printf("[-] Warning: number of connected components should be 1\n", num_components);
+
     Eigen::ArrayXi cut_edges;
     initial_cut(V, F, 0.59f, cut_edges);
     printf("Number of edges in initial cut: %d\n", cut_edges.sum());
