@@ -288,8 +288,12 @@ void geometry_image(const Eigen::MatrixXd & V,
 {
     int num_components = check_components(V, F);
     printf("This mesh has %d connected component(s)\n", num_components);
-    if (num_components > 1)
+    if (num_components != 1)
         printf("[-] Warning: number of connected components should be 1\n", num_components);
+
+    // Split into connected components
+    // Process each, allocate rectangular space in the output UV
+    // parameterization proportional to number of vertices in the component
 
     Eigen::ArrayXi cut_edges;
     initial_cut(V, F, 0.59f, cut_edges);
