@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <Eigen/Core>
 
 namespace io_utils
 {
@@ -15,4 +16,8 @@ namespace io_utils
                    const unsigned int & width,
                    const unsigned int & height,
                    const unsigned int & channels);
+
+    void read_triangle_mesh(const char* mesh_filepath,
+                            Eigen::MatrixXd & V,
+                            Eigen::MatrixXi & F);
 }

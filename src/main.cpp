@@ -13,7 +13,11 @@ int main(int argc, char *argv[])
     Eigen::MatrixXd V, UV, UV_geom;
     Eigen::MatrixXi F;
     const char* mesh_filepath = (argc > 1) ? argv[1] : "../data/beetle.obj";
-    igl::read_triangle_mesh(mesh_filepath, V, F);
+    bool use_igl_reader = true;
+    if (use_igl_reader)
+        igl::read_triangle_mesh(mesh_filepath, V, F);
+    else
+        io_utils::read_triangle_mesh(mesh_filepath, V, F);
 
     // Compute parameterization
     Eigen::MatrixXd Vcut;
