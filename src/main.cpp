@@ -36,12 +36,24 @@ int main(int argc, char *argv[])
     }
 
     // Write parameterization
+    std::vector<float> uv_param(UV_geom.size());
+    int num_vertices = V.rows();
+    for (int vi = 0; vi < num_vertices; vi++)
+    {
+        uv_param[0 * num_vertices + vi] = UV_geom(vi, 0);
+        uv_param[1 * num_vertices + vi] = UV_geom(vi, 1);
+    }
+    std::string param_outpath = std::string("uv_param.pfm");
+    io_utils::write_pfm(param_outpath.c_str(), uv_param.data(), num_vertices, 2, 1);
+    printf("Wrote per-vertex parameterization to %s.\n", param_outpath);
+
+    // Write geometry images
     Eigen::MatrixXd N;
     igl::per_vertex_normals(V, F, N);
     int output_res = 256;
     std::vector<float> vertex_image(output_res * output_res * 3, 0.f);
     std::vector<float> normal_image(output_res * output_res * 3, 0.f);
-    for (int vi = 0; vi < V.rows(); vi++)
+    for (int vi = 0; vi < num_vertices; vi++)
     {
         // Forward mapping
         double u = (UV_geom(vi, 0) + 1.0) / 2.0;  // [0, 1]
@@ -58,10 +70,15 @@ int main(int argc, char *argv[])
             normal_image[(y * output_res + x) * 3 + 2] = N(vi, 2);
         }
     }
-    io_utils::write_pfm("vertices.pfm", vertex_image.data(), output_res, output_res, 3);
-    io_utils::write_pfm("normals.pfm",  normal_image.data(), output_res, output_res, 3);
+    std::string vertices_outpath = std::string("vertices.pfm");
+    std::string normals_outpath  = std::string("normals.pfm");
+    io_utils::write_pfm(vertices_outpath.c_str(), vertex_image.data(), output_res, output_res, 3);
+    io_utils::write_pfm(normals_outpath.c_str(),  normal_image.data(), output_res, output_res, 3);
+    printf("Wrote vertex geometry image to %s.\n", vertices_outpath);
+    printf("Wrote normal geometry image to %s.\n", normals_outpath);
 
     // Set up viewer
+    printf("\n");
     igl::opengl::glfw::Viewer viewer;
     std::cout << R"(
   [space] Toggle whether displaying 3D surface or 2D parameterization

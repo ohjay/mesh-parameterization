@@ -9,6 +9,7 @@
 #include <igl/cut_mesh.h>
 #include <igl/boundary_loop.h>
 #include <igl/vertex_components.h>
+#include <igl/map_vertices_to_circle.h>
 #include <cmath>
 #include <unordered_set>
 
@@ -295,17 +296,34 @@ void geometry_image(const Eigen::MatrixXd & V,
     // Process each, allocate rectangular space in the output UV
     // parameterization proportional to number of vertices in the component
 
-    Eigen::ArrayXi cut_edges;
-    initial_cut(V, F, 0.59f, cut_edges);
-    printf("Number of edges in initial cut: %d\n", cut_edges.sum());
-
+    // Convert to topological disk, define boundary
+    bool single_boundary_loop = false;
     Eigen::VectorXi boundary;
-    open_cut(V, F, cut_edges, Vcut, Fcut, boundary);
-    printf("Finished opening cut.\n");
+    if (single_boundary_loop)
+    {
+        igl::boundary_loop(F, boundary);
+        Vcut = V;
+        Fcut = F;
+    }
+    else
+    {
+        Eigen::ArrayXi cut_edges;
+        initial_cut(V, F, 0.59f, cut_edges);
+        printf("Number of edges in initial cut: %d\n", cut_edges.sum());
+        open_cut(V, F, cut_edges, Vcut, Fcut, boundary);
+        printf("Finished opening cut.\n");
+    }
 
+    // Parameterize boundary
+    bool circle_boundary = false;
     Eigen::MatrixXd boundary_uv;
-    boundary_parameterization(Vcut, Fcut, boundary, boundary_uv);
+    if (circle_boundary)
+        igl::map_vertices_to_circle(Vcut, boundary, boundary_uv);
+    else
+        boundary_parameterization(Vcut, Fcut, boundary, boundary_uv);
     printf("Finished parameterizing boundary.\n");
 
+    // Parameterize interior
     igl::harmonic(Vcut, Fcut, boundary, boundary_uv, 1, U);
+    printf("Finished parameterizing interior.\n");
 }
