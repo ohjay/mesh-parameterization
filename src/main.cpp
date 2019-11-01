@@ -2,6 +2,9 @@
 #include "io_utils.h"
 #include <igl/read_triangle_mesh.h>
 #include <igl/per_vertex_normals.h>
+#include <igl/per_face_normals.h>
+#include <igl/facet_components.h>
+#include <igl/jet.h>
 #include <igl/opengl/glfw/Viewer.h>
 #include <Eigen/Core>
 #include <string>
@@ -22,9 +25,15 @@ int main(int argc, char *argv[])
     // Compute parameterization
     Eigen::MatrixXd Vcut;
     Eigen::MatrixXi Fcut;
-    geometry_image(V, F, UV_geom, Vcut, Fcut);
-    V = Vcut;
-    F = Fcut;
+    bool compute_geometry_image = false;
+    if (compute_geometry_image)
+    {
+        geometry_image(V, F, UV_geom, Vcut, Fcut);
+        V = Vcut;
+        F = Fcut;
+    }
+    else
+        UV_geom = V.leftCols(2);
 
     // Fit parameterization in unit sphere
     bool do_normalize = false;
@@ -49,7 +58,7 @@ int main(int argc, char *argv[])
     }
     std::string param_outpath = std::string("uv_param.pfm");
     io_utils::write_pfm(param_outpath.c_str(), uv_param.data(), num_vertices, 2, 1);
-    printf("Wrote per-vertex parameterization to %s.\n", param_outpath);
+    printf("Wrote per-vertex parameterization to %s.\n", param_outpath.c_str());
 
     // Write geometry images
     Eigen::MatrixXd N;
@@ -78,8 +87,8 @@ int main(int argc, char *argv[])
     std::string normals_outpath  = std::string("normals.pfm");
     io_utils::write_pfm(vertices_outpath.c_str(), vertex_image.data(), output_res, output_res, 3);
     io_utils::write_pfm(normals_outpath.c_str(),  normal_image.data(), output_res, output_res, 3);
-    printf("Wrote vertex geometry image to %s.\n", vertices_outpath);
-    printf("Wrote normal geometry image to %s.\n", normals_outpath);
+    printf("Wrote vertex geometry image to %s.\n", vertices_outpath.c_str());
+    printf("Wrote normal geometry image to %s.\n", normals_outpath.c_str());
 
     // Set up viewer
     printf("\n");
@@ -89,6 +98,7 @@ int main(int argc, char *argv[])
   C,c     Toggle checkerboard
 )";
     bool plot_parameterization = false;
+    bool visualize_facet_components = true;
     const auto & update = [&]()
     {
         if (plot_parameterization)
@@ -99,9 +109,14 @@ int main(int argc, char *argv[])
                     UV.col(0), Eigen::VectorXd::Zero(V.rows()), UV.col(1)).finished());
         }
         else
+        {
             viewer.data().set_vertices(V);
-        viewer.data().compute_normals();
-        viewer.data().set_uv(UV * 10);
+        }
+        if (!visualize_facet_components)
+        {
+            viewer.data().compute_normals();
+            viewer.data().set_uv(UV * 10);
+        }
     };
     viewer.callback_key_pressed = [&](igl::opengl::glfw::Viewer &, unsigned int key, int)
     {
@@ -126,9 +141,25 @@ int main(int argc, char *argv[])
 
     UV = UV_geom;
     viewer.data().set_mesh(V, F);
-    viewer.data().set_colors(N.array() * 0.5 + 0.5);
+    if (visualize_facet_components)
+    {
+        Eigen::VectorXd components;
+        igl::facet_components(F, components);
+
+        Eigen::MatrixXd component_colors;
+        igl::jet(components, true, component_colors);
+        viewer.data().set_colors(component_colors);
+
+        // Trigger per-face shading
+        igl::per_face_normals(V, F, N);
+        viewer.data().set_normals(N);
+    }
+    else
+    {
+        viewer.data().set_colors(N.array() * 0.5 + 0.5);
+    }
     update();
-    viewer.data().show_texture = true;
+    viewer.data().show_texture = false;
     viewer.data().show_lines = false;
     viewer.launch();
 

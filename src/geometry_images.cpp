@@ -8,7 +8,7 @@
 #include <igl/harmonic.h>
 #include <igl/cut_mesh.h>
 #include <igl/boundary_loop.h>
-#include <igl/vertex_components.h>
+#include <igl/facet_components.h>
 #include <igl/map_vertices_to_circle.h>
 #include <cmath>
 #include <unordered_set>
@@ -16,8 +16,8 @@
 int check_components(const Eigen::MatrixXd & V,
                      const Eigen::MatrixXi & F)
 {
-    Eigen::VectorXi components;  // per-vertex component IDs
-    igl::vertex_components(F, components);
+    Eigen::VectorXi components;  // per-face component IDs
+    igl::facet_components(F, components);
 
     std::unordered_set<int> unique_component_ids;
     for (int ci = 0; ci < components.size(); ci++)
@@ -290,7 +290,7 @@ void geometry_image(const Eigen::MatrixXd & V,
     int num_components = check_components(V, F);
     printf("This mesh has %d connected component(s)\n", num_components);
     if (num_components != 1)
-        printf("[-] Warning: number of connected components should be 1\n", num_components);
+        printf("[-] Warning: number of connected components should be 1\n");
 
     // Split into connected components
     // Process each, allocate rectangular space in the output UV
