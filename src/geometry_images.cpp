@@ -254,7 +254,7 @@ void boundary_parameterization(const Eigen::MatrixXd & V,
     double i = 0;
     for (int vi = 0; vi < n; vi++)
     {
-        switch(int(std::floor(i)))
+        switch (int(std::floor(i)))
         {
             case 0:
                 boundary_uv(vi, 0) = 1.0;
